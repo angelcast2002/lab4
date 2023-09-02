@@ -75,7 +75,8 @@ std::vector<Fragment> triangle(const Vertex& a, const Vertex& b, const Vertex& c
           color,
           intensity,
           worldPos,
-          originalPos
+          originalPos,
+          normal
         }
       );
     }

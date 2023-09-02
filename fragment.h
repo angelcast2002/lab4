@@ -19,6 +19,7 @@ struct Fragment {
   float intensity;  // light intensity
   glm::vec3 worldPos;
   glm::vec3 originalPos;
+  glm::vec3 normal;
 };
 
 struct FragColor {
