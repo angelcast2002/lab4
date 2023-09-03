@@ -80,8 +80,11 @@ void renderThread(const std::vector<glm::vec3>& VBO, const Uniforms& uniforms, i
     }
 
     for (size_t i = 0; i < fragments.size(); ++i) {
-        const Fragment& fragment = fragmentShader(fragments[i]);
-        point(fragment);
+        const Fragment& fragmentSol = sol(fragments[i]);
+        const Fragment& fragmentTierra = tierra(fragments[i]);
+        const Fragment& fragmentLuna = luna(fragments[i]);
+        const Fragment& fragmentGaseoso = gaseoso(fragments[i]);
+        point(fragmentSol);
     }
 }
 

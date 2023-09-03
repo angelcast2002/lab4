@@ -47,10 +47,12 @@ glm::vec3 hsv2rgb(glm::vec3 c) {
 }
 
 // Shader fragment function
-Fragment Sol(Fragment& fragment) {
+Fragment sol(Fragment& fragment) {
 
     // Get UV coordinates
     glm::vec2 uv = glm::vec2(fragment.originalPos.x, fragment.originalPos.y / fragment.originalPos.z + 0.5f);
+    // glm::vec2 uv = glm::vec2(fragment.originalPos.x, fragment.originalPos.y);
+    // uv = uv * fragment.originalPos.x;
 
     // Generate Perlin noise
     FastNoiseLite noiseGenerator;
@@ -78,7 +80,7 @@ Fragment Sol(Fragment& fragment) {
     return fragment;
 }
 
-Fragment a(Fragment& fragment) {
+Fragment solAmarillo(Fragment& fragment) {
     glm::vec3 sunColor1 = glm::vec3(252.0f / 255.0f, 211.0f / 255.0f, 0.0f / 255.0f);
     glm::vec3 sunColor2 = glm::vec3(252.0f / 255.0f, 163.0f / 255.0f, 0.0f / 255.0f);
 
@@ -106,7 +108,7 @@ Fragment a(Fragment& fragment) {
     return fragment;
 }
 
-Fragment fragmentShader(Fragment& fragment) {
+Fragment tierra(Fragment& fragment) {
     Color color;
 
     glm::vec3 groundColor = glm::vec3(0.44f, 0.51f, 0.33f);
@@ -115,7 +117,6 @@ Fragment fragmentShader(Fragment& fragment) {
     glm::vec3 cloudColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
     glm::vec2 uv = glm::vec2(fragment.originalPos.x, fragment.originalPos.y);
-    /* glm::vec2 uv = glm::vec2(fragment.texCoords.x, fragment.texCoords.y) */;
 
     FastNoiseLite noiseGenerator;
     noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
@@ -135,7 +136,6 @@ Fragment fragmentShader(Fragment& fragment) {
 
     float noiseValueG = noiseGenerator2.GetNoise((uv.x + oxg) * zoomg, (uv.y + oyg) * zoomg);
 
-    // glm::vec3 tmpColor = (noiseValue < 0.5f) ? oceanColor : groundColor;
     glm::vec3 tmpColor;
     if (noiseValue < 0.5f) {
         tmpColor = oceanColor;
@@ -154,10 +154,9 @@ Fragment fragmentShader(Fragment& fragment) {
     float noiseValueC = noiseGenerator.GetNoise((uv.x + oxc) * zoomc, (uv.y + oyc) * zoomc);
 
     if (noiseValueC > 0.5f) {
-        tmpColor = glm::smoothstep(0.5f, 0.6f, noiseValueC) * cloudColor + (1.0f - glm::smoothstep(0.5f, 0.6f, noiseValueC)) * tmpColor;
-        //tmpColor = cloudColor;
+        float t = (noiseValueC - 0.5f) * 2.0f; // Map [-1, 1] to [0, 1]
+        tmpColor = glm::mix(tmpColor, cloudColor, t);
     }
-
 
     color = Color(tmpColor.x, tmpColor.y, tmpColor.z);
 
@@ -166,4 +165,69 @@ Fragment fragmentShader(Fragment& fragment) {
     return fragment;
 }
 
-// glm::fract para noise
+Fragment gaseoso(Fragment& fragment) {
+    Color color;
+
+    glm::vec3 mainColor = glm::vec3(163.0f/255.0f, 135.0f/255.0f, 115.0f/255.0f);
+    glm::vec3 secondColor = glm::vec3(248.0f/255.0f, 213.0f/255.0f, 183.0f/255.0f);
+
+    glm::vec2 uv = glm::vec2(fragment.originalPos.x * 2.0 - 1.0 , fragment.originalPos.y * 2.0 - 1.0);
+
+    // Frecuencia y amplitud de las ondas en el planeta
+    float frequency = 15.0; // Ajusta la frecuencia de las líneas
+    float amplitude = 0.1; // Ajusta la amplitud de las líneas
+
+    FastNoiseLite noiseGenerator;
+    noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Cellular);
+
+    float offsetX = 10000.0f;
+    float offsetY = 10000.0f;
+    float scale = 900.0f;
+
+    // Genera el valor de ruido
+    float noiseValue = noiseGenerator.GetNoise((uv.x + offsetX) * scale, (uv.y + offsetY) * scale);
+    noiseValue = (noiseValue + 1.0f) * 0.5f; // Map [-1, 1] to [0, 1]
+
+    // Calcula el valor sinusoide para crear líneas
+    float sinValue = glm::sin(uv.y * frequency) * amplitude;
+
+    // Combina el color base con las líneas sinusoide
+    secondColor = mainColor + glm::vec3 (sinValue);
+
+    color = Color(secondColor.x, secondColor.y, secondColor.z);
+
+    fragment.color = color * fragment.intensity;
+
+    return fragment;
+}
+
+Fragment luna(Fragment& fragment) {
+    Color color;
+
+    glm::vec3 moonColor = glm::vec3(0.8f, 0.8f, 0.8f); // Color de la luna
+
+    glm::vec2 uv = glm::vec2(fragment.originalPos.x * 2.0 - 1.0, fragment.originalPos.y * 2.0 - 1.0);
+
+    // Frecuencia y amplitud de las texturas para simular la superficie rugosa
+    float amplitude = 0.1; // Ajusta la amplitud de las texturas
+
+    FastNoiseLite noiseGenerator;
+    noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
+
+    float offsetX = 5000.0f;
+    float offsetY = 8000.0f;
+    float scale = 500.0f;
+
+    // Genera el valor de ruido para la superficie rugosa
+    float noiseValue = noiseGenerator.GetNoise((uv.x + offsetX) * scale, (uv.y + offsetY) * scale);
+    noiseValue = (noiseValue + 1.0f) * 0.5f; // Mapea [-1, 1] a [0, 1]
+
+    // Combina el color de la luna con las texturas rugosas
+    moonColor = glm::mix(moonColor, glm::vec3(0.6f, 0.6f, 0.6f), noiseValue * amplitude * 5.0f);
+
+    color = Color(moonColor.x, moonColor.y, moonColor.z);
+
+    fragment.color = color * fragment.intensity;
+
+    return fragment;
+}
