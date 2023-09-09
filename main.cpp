@@ -16,10 +16,6 @@
 #include "ObjLoader.h"
 #include "noise.h"
 #include "model.h"
-#include <thread>
-#include "functional"
-
-const int NUM_THREADS = 160;
 
 SDL_Window* window = nullptr;
 SDL_Renderer* renderer = nullptr;
@@ -54,17 +50,16 @@ void setColor(const Color& color) {
     currentColor = color;
 }
 
-void renderThread(const std::vector<glm::vec3>& VBO, const Uniforms& uniforms, const std::function<Fragment(Fragment&)>& Fshader, int threadId) {
-    int batchSize = VBO.size() / (NUM_THREADS * 3);
-    int startIdx = batchSize * threadId * 3;
-    int endIdx = batchSize * (threadId + 1) * 3;
+void render(const std::vector<glm::vec3>& VBO, const Uniforms& uniforms) {
 
-    std::vector<Vertex> transformedVertices(batchSize);
-    for (int i = startIdx; i < endIdx; i += 3) {
-        Vertex vertex = { VBO[i], VBO[i + 1], VBO[i + 2] };
-        transformedVertices[(i - startIdx) / 3] = vertexShader(vertex, uniforms);
+    // 1. Vertex Shader
+    std::vector<Vertex> transformedVertices(VBO.size() / 3);
+    for (size_t i = 0; i < VBO.size() / 3; ++i) {
+        Vertex vertex = { VBO[i * 3], VBO[i * 3 + 1], VBO[i * 3 + 2] };
+        transformedVertices[i] = vertexShader(vertex, uniforms);
     }
 
+    // 2. Primitive Assembly
     std::vector<std::vector<Vertex>> assembledVertices(transformedVertices.size() / 3);
     for (size_t i = 0; i < transformedVertices.size() / 3; ++i) {
         Vertex edge1 = transformedVertices[3 * i];
@@ -73,6 +68,7 @@ void renderThread(const std::vector<glm::vec3>& VBO, const Uniforms& uniforms, c
         assembledVertices[i] = { edge1, edge2, edge3 };
     }
 
+    // 3. Rasterization
     std::vector<Fragment> fragments;
     for (size_t i = 0; i < assembledVertices.size(); ++i) {
         std::vector<Fragment> rasterizedTriangle = triangle(
@@ -83,23 +79,11 @@ void renderThread(const std::vector<glm::vec3>& VBO, const Uniforms& uniforms, c
         fragments.insert(fragments.end(), rasterizedTriangle.begin(), rasterizedTriangle.end());
     }
 
+    // 4. Fragment Shader
     for (size_t i = 0; i < fragments.size(); ++i) {
-        const Fragment& fragment = Fshader(fragments[i]);
-        point(fragment);
-
-    }
-}
-
-void render() {
-    std::vector<std::thread> threads(NUM_THREADS);
-    for (const auto& model : models) {
-        for (int i = 0; i < NUM_THREADS; ++i) {
-            threads[i] = std::thread(renderThread, std::ref(model.VBO), std::ref(model.uniforms), std::ref(model.fshader), i);
-        }
-
-        for (int i = 0; i < NUM_THREADS; ++i) {
-            threads[i].join();
-        }
+        const Fragment& fragment = tierra(fragments[i]);
+        // Apply the fragment shader to compute the final color
+        point(fragment); // Be aware of potential race conditions here
     }
 }
 
@@ -168,7 +152,6 @@ int main(int argc, char* argv[]) {
     modelSol.VBO = vertexBufferObject;
     modelSol.uniforms = uniforms;
     modelSol.fshader = sol;
-    
 
     models.push_back(modelSol);
     //models.push_back(modelTierra);
@@ -215,7 +198,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
         clearFramebuffer();
 
-        render();
+        render(vertexBufferObject, uniforms);
 
         renderBuffer(renderer);
 
