@@ -109,6 +109,7 @@ Fragment solAmarillo(Fragment& fragment) {
 }
 
 Fragment tierra(Fragment& fragment) {
+    std::cout << "Tierra" << std::endl;
     Color color;
 
     glm::vec3 groundColor = glm::vec3(0.44f, 0.51f, 0.33f);

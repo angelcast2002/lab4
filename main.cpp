@@ -15,13 +15,17 @@
 #include "camera.h"
 #include "ObjLoader.h"
 #include "noise.h"
+#include "model.h"
 #include <thread>
+#include "functional"
 
 const int NUM_THREADS = 160;
 
 SDL_Window* window = nullptr;
 SDL_Renderer* renderer = nullptr;
 Color currentColor;
+
+std::vector<Model> models;
 
 bool init() {
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -50,7 +54,7 @@ void setColor(const Color& color) {
     currentColor = color;
 }
 
-void renderThread(const std::vector<glm::vec3>& VBO, const Uniforms& uniforms, int threadId) {
+void renderThread(const std::vector<glm::vec3>& VBO, const Uniforms& uniforms, const std::function<Fragment(Fragment&)>& Fshader, int threadId) {
     int batchSize = VBO.size() / (NUM_THREADS * 3);
     int startIdx = batchSize * threadId * 3;
     int endIdx = batchSize * (threadId + 1) * 3;
@@ -80,27 +84,22 @@ void renderThread(const std::vector<glm::vec3>& VBO, const Uniforms& uniforms, i
     }
 
     for (size_t i = 0; i < fragments.size(); ++i) {
-        // const Fragment& fragmentSol = sol(fragments[i]);
-        // point(fragmentSol);
-        const Fragment& fragmentTierra = tierra(fragments[i]);
-        point(fragmentTierra);
-        // const Fragment& fragmentLuna = luna(fragments[i]);
-        // point(fragmentLuna);
-        // const Fragment& fragmentGaseoso = gaseoso(fragments[i]);
-        // point(fragmentGaseoso);
+        const Fragment& fragment = Fshader(fragments[i]);
+        point(fragment);
 
     }
 }
 
-void render(const std::vector<glm::vec3>& VBO, const Uniforms& uniforms) {
+void render() {
     std::vector<std::thread> threads(NUM_THREADS);
+    for (const auto& model : models) {
+        for (int i = 0; i < NUM_THREADS; ++i) {
+            threads[i] = std::thread(renderThread, std::ref(model.VBO), std::ref(model.uniforms), std::ref(model.fshader), i);
+        }
 
-    for (int i = 0; i < NUM_THREADS; ++i) {
-        threads[i] = std::thread(renderThread, std::ref(VBO), std::ref(uniforms), i);
-    }
-
-    for (int i = 0; i < NUM_THREADS; ++i) {
-        threads[i].join();
+        for (int i = 0; i < NUM_THREADS; ++i) {
+            threads[i].join();
+        }
     }
 }
 
@@ -164,6 +163,16 @@ int main(int argc, char* argv[]) {
     std::string title = "FPS: ";
     int speed = 10;
 
+    Model modelSol;
+    modelSol.modelMatrix = glm::mat4(1.0f);
+    modelSol.VBO = vertexBufferObject;
+    modelSol.uniforms = uniforms;
+    modelSol.fshader = sol;
+    
+
+    models.push_back(modelSol);
+    //models.push_back(modelTierra);
+
     bool running = true;
     while (running) {
         frameStart = SDL_GetTicks();
@@ -206,7 +215,7 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
         clearFramebuffer();
 
-        render(vertexBufferObject, uniforms);
+        render();
 
         renderBuffer(renderer);
 
