@@ -202,9 +202,19 @@ int main(int argc, char* argv[]) {
     // Tamaño de los astros
     glm::vec3 scaleFactor(1.0f, 1.0f, 1.0f);
 
+    // Movimiento de la camara
     glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 10.0f); // Posición inicial de la cámara
     glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);    // Dirección hacia la que mira la cámara
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);        // Vector "arriba" de la cámara
+    float yaw = -90.0f;  // Ángulo de rotación en el plano horizontal (eje Y)
+    float pitch = 0.0f;  // Ángulo de rotación en el plano vertical (eje X)
+    float rotationSpeed = 1.0f;  // Velocidad de rotación de la cámara
+    float pitchy = 0.0f;          // Ángulo de inclinación vertical
+    float pitchSpeed = 1.0f;     // Velocidad de rotación vertical
+
+    // Rotacion automatica
+    bool isAutoRotation = true; // Inicialmente, la rotación no es automática
+
 
     bool running = true;
     while (running) {
@@ -229,17 +239,51 @@ int main(int argc, char* argv[]) {
                     case SDLK_DOWN:
                         cameraPosition -= cameraFront;
                         break;
+                    case SDLK_a:  // Rotar hacia la izquierda (sentido anti-horario)
+                        isAutoRotation = false;
+                        yaw -= rotationSpeed;
+                        break;
+                    case SDLK_d:  // Rotar hacia la derecha (sentido horario)
+                        isAutoRotation = false;
+                        yaw += rotationSpeed;
+                        break;
+                    case SDLK_l: // Cambiar entre rotación automática y manual
+                        if (isAutoRotation) {
+                            isAutoRotation = false; // Cambiar a rotación manual
+                        } else {
+                            isAutoRotation = true; // Cambiar a rotación automática
+                        }
+                        break;
+                    case SDLK_w: // Rotar hacia arriba
+                        pitch += pitchSpeed;
+                        break;
+                    case SDLK_s: // Rotar hacia abajo
+                        pitch -= pitchSpeed;
+                        break;
                 }
             }
         }
+
+        if (isAutoRotation) {
+            rotationSpeed = 0.2f; // Establecer la velocidad de rotación automática
+            yaw += rotationSpeed; // Rotación automática
+        } else {
+            rotationSpeed = 1.0f; // Establecer la velocidad de rotación manual
+        }
+
         glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
+        view = glm::rotate(view, glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)); // Rotación vertical
+        view = glm::rotate(view, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación horizontal
         uniforms.view = view;
 
-        
+
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
-        clearFramebuffer();
+
+        float ox = 2.0f;
+        float oy = 2.0f;
+        clearFramebuffer(ox, oy);
         glm::mat4 rotation = glm::mat4(1.0f);
         for (auto& model: models){
             switch (model.currentShader) {
