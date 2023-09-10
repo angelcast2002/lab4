@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
     glm::mat4 projection = glm::mat4(1);
 
     Camera camera;
-    camera.cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
+    camera.cameraPosition = glm::vec3(0.0f, 0.0f, 10.0f);
     camera.targetPosition = glm::vec3(0.0f, 0.0f, 0.0f);
     camera.upVector = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -181,6 +181,14 @@ int main(int argc, char* argv[]) {
 
     models.push_back(luna);
 
+    Model gaseoso;
+    gaseoso.VBO = vertexBufferObject;
+    gaseoso.currentShader = GASEOSO;
+    gaseoso.uniforms = uniforms;
+    gaseoso.modelMatrix = glm::mat4(1.0f);
+
+    models.push_back(gaseoso);
+
     // Posicion de los astros
     glm::vec3 newTranslationVector(0.0f, 0.0f, 0.0f);
 
@@ -188,10 +196,15 @@ int main(int argc, char* argv[]) {
     float rotaSol = 45.0f;
     float rotaTierra = 45.0f;
     float rotaLuna = 45.0f;
+    float rotaGaseoso = 45.0f;
     glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);
 
     // Tamaño de los astros
     glm::vec3 scaleFactor(1.0f, 1.0f, 1.0f);
+
+    glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 10.0f); // Posición inicial de la cámara
+    glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);    // Dirección hacia la que mira la cámara
+    glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);        // Vector "arriba" de la cámara
 
     bool running = true;
     while (running) {
@@ -205,26 +218,24 @@ int main(int argc, char* argv[]) {
             if (event.type == SDL_KEYDOWN) {
                 switch (event.key.keysym.sym) {
                     case SDLK_LEFT:
-                        camera.cameraPosition.x += -speed;
+                        cameraPosition -= glm::normalize(glm::cross(cameraFront, cameraUp));
                         break;
                     case SDLK_RIGHT:
-                        camera.cameraPosition.x += speed;
+                        cameraPosition += glm::normalize(glm::cross(cameraFront, cameraUp));
                         break;
                     case SDLK_UP:
-                        camera.cameraPosition.y += -speed;
+                        cameraPosition += cameraFront;
                         break;
                     case SDLK_DOWN:
-                        camera.cameraPosition.y += speed;
+                        cameraPosition -= cameraFront;
                         break;
                 }
             }
         }
+        glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
+        uniforms.view = view;
 
-        uniforms.view = glm::lookAt(
-                camera.cameraPosition,
-                camera.targetPosition,
-                camera.upVector
-        );
+        
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
@@ -249,6 +260,12 @@ int main(int argc, char* argv[]) {
                     newTranslationVector = glm::vec3(2.0f, 0.3f, 0.0f);
                     scaleFactor = glm::vec3(0.25f, 0.25f, 0.25f);
                     rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaLuna), rotationAxis);
+                    break;
+                case GASEOSO:
+                    rotaGaseoso += 3.0f;
+                    newTranslationVector = glm::vec3(4.0f, 0.0f, 0.0f);
+                    scaleFactor = glm::vec3(1.75f, 1.75f, 1.75f);
+                    rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaGaseoso), rotationAxis);
                     break;
             }
             glm::mat4 translation = glm::translate(glm::mat4(1.0f), newTranslationVector);
