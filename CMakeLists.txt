@@ -11,7 +11,8 @@ include_directories(${SDL2_INCLUDE_DIR})
 link_directories(${SDL2_LIB_DIR})
 
 # Agrega los archivos fuente al ejecutable
-add_executable(lab4 main.cpp ObjLoader.cpp)
+add_executable(lab4 main.cpp ObjLoader.cpp
+        model.h)
 
 target_link_libraries(${PROJECT_NAME} SDL2main SDL2)
 
