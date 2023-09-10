@@ -142,7 +142,7 @@ int main(int argc, char* argv[]) {
     glm::mat4 projection = glm::mat4(1);
 
     Camera camera;
-    camera.cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
+    camera.cameraPosition = glm::vec3(0.0f, 0.0f, 3.0f);
     camera.targetPosition = glm::vec3(0.0f, 0.0f, 0.0f);
     camera.upVector = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
     sol.uniforms = uniforms;
     sol.modelMatrix = glm::mat4(1.0f);
 
-    models.push_back(sol);
+    // models.push_back(sol);
 
     Model tierra;
     tierra.VBO = vertexBufferObject;
@@ -240,13 +240,15 @@ int main(int argc, char* argv[]) {
                     break;
                 case TIERRA:
                     rotaTierra += 0.8f;
-                    newTranslationVector = glm::vec3(1.5f, 0.0f, 0.0f);
+                    newTranslationVector = glm::vec3(0.0f, 0.0f, 0.0f);
+                    // newTranslationVector = glm::vec3(1.5f, 0.0f, 0.0f);
                     scaleFactor = glm::vec3(0.5f, 0.5f, 0.5f);
                     rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaTierra), rotationAxis);
                     break;
                 case LUNA:
                     rotaLuna += 1.5f;
-                    newTranslationVector = glm::vec3(2.0f, 0.3f, 0.0f);
+                    newTranslationVector = glm::vec3(0.5f, 0.3f, 0.0f);
+                    // newTranslationVector = glm::vec3(2.0f, 0.3f, 0.0f);
                     scaleFactor = glm::vec3(0.25f, 0.25f, 0.25f);
                     rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaLuna), rotationAxis);
                     break;
