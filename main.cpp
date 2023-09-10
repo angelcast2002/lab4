@@ -92,6 +92,12 @@ void render() {
                 case TIERRA:
                     fragment = tierra(fragment);
                     break;
+                case GASEOSO:
+                    fragment = gaseoso(fragment);
+                    break;
+                case LUNA:
+                    fragment = luna(fragment);
+                    break;
                     // Añade más casos para otros shaders
             }
             point(fragment); // Be aware of potential race conditions here
@@ -135,12 +141,6 @@ int main(int argc, char* argv[]) {
     glm::mat4 view = glm::mat4(1);
     glm::mat4 projection = glm::mat4(1);
 
-    float a = 45.0f;
-    glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);
-    glm::vec3 scaleFactor(1.0f, 1.0f, 1.0f);
-
-    glm::mat4 scale = glm::scale(glm::mat4(1.0f), scaleFactor);
-
     Camera camera;
     camera.cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
     camera.targetPosition = glm::vec3(0.0f, 0.0f, 0.0f);
@@ -173,6 +173,26 @@ int main(int argc, char* argv[]) {
 
     models.push_back(tierra);
 
+    Model luna;
+    luna.VBO = vertexBufferObject;
+    luna.currentShader = LUNA;
+    luna.uniforms = uniforms;
+    luna.modelMatrix = glm::mat4(1.0f);
+
+    models.push_back(luna);
+
+    // Posicion de los astros
+    glm::vec3 newTranslationVector(0.0f, 0.0f, 0.0f);
+
+    // Rotacion de los astros
+    float rotaSol = 45.0f;
+    float rotaTierra = 45.0f;
+    float rotaLuna = 45.0f;
+    glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);
+
+    // Tamaño de los astros
+    glm::vec3 scaleFactor(1.0f, 1.0f, 1.0f);
+
     bool running = true;
     while (running) {
         frameStart = SDL_GetTicks();
@@ -200,11 +220,6 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        a += 1;
-        glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(a), rotationAxis);
-
-
-
         uniforms.view = glm::lookAt(
                 camera.cameraPosition,
                 camera.targetPosition,
@@ -214,18 +229,30 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
         clearFramebuffer();
-
+        glm::mat4 rotation = glm::mat4(1.0f);
         for (auto& model: models){
-            glm::vec3 newTranslationVector(0.0f, 0.0f, 0.0f);
             switch (model.currentShader) {
                 case SOL:
-                    newTranslationVector.x = 0.0f;
+                    rotaSol += 0.3f;
+                    newTranslationVector = glm::vec3(0.0f, 0.0f, 0.0f);
+                    scaleFactor = glm::vec3(1.0f, 1.0f, 1.0f);
+                    rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaSol), rotationAxis);
                     break;
                 case TIERRA:
-                    newTranslationVector.x = 1.5f;
+                    rotaTierra += 0.8f;
+                    newTranslationVector = glm::vec3(1.5f, 0.0f, 0.0f);
+                    scaleFactor = glm::vec3(0.5f, 0.5f, 0.5f);
+                    rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaTierra), rotationAxis);
+                    break;
+                case LUNA:
+                    rotaLuna += 1.5f;
+                    newTranslationVector = glm::vec3(2.0f, 0.3f, 0.0f);
+                    scaleFactor = glm::vec3(0.25f, 0.25f, 0.25f);
+                    rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaLuna), rotationAxis);
                     break;
             }
             glm::mat4 translation = glm::translate(glm::mat4(1.0f), newTranslationVector);
+            glm::mat4 scale = glm::scale(glm::mat4(1.0f), scaleFactor);
             uniforms.model = translation * rotation * scale;
             model.uniforms = uniforms;
         }
