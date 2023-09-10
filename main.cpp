@@ -50,40 +50,52 @@ void setColor(const Color& color) {
     currentColor = color;
 }
 
-void render(const std::vector<glm::vec3>& VBO, const Uniforms& uniforms) {
+void render() {
 
-    // 1. Vertex Shader
-    std::vector<Vertex> transformedVertices(VBO.size() / 3);
-    for (size_t i = 0; i < VBO.size() / 3; ++i) {
-        Vertex vertex = { VBO[i * 3], VBO[i * 3 + 1], VBO[i * 3 + 2] };
-        transformedVertices[i] = vertexShader(vertex, uniforms);
-    }
+    for (auto& model: models){
+        // 1. Vertex Shader
+        std::vector<Vertex> transformedVertices(model.VBO.size() / 3);
+        for (size_t i = 0; i < model.VBO.size() / 3; ++i) {
+            Vertex vertex = { model.VBO[i * 3], model.VBO[i * 3 + 1], model.VBO[i * 3 + 2] };
+            transformedVertices[i] = vertexShader(vertex, model.uniforms);
+        }
 
-    // 2. Primitive Assembly
-    std::vector<std::vector<Vertex>> assembledVertices(transformedVertices.size() / 3);
-    for (size_t i = 0; i < transformedVertices.size() / 3; ++i) {
-        Vertex edge1 = transformedVertices[3 * i];
-        Vertex edge2 = transformedVertices[3 * i + 1];
-        Vertex edge3 = transformedVertices[3 * i + 2];
-        assembledVertices[i] = { edge1, edge2, edge3 };
-    }
+        // 2. Primitive Assembly
+        std::vector<std::vector<Vertex>> assembledVertices(transformedVertices.size() / 3);
+        for (size_t i = 0; i < transformedVertices.size() / 3; ++i) {
+            Vertex edge1 = transformedVertices[3 * i];
+            Vertex edge2 = transformedVertices[3 * i + 1];
+            Vertex edge3 = transformedVertices[3 * i + 2];
+            assembledVertices[i] = { edge1, edge2, edge3 };
+        }
 
-    // 3. Rasterization
-    std::vector<Fragment> fragments;
-    for (size_t i = 0; i < assembledVertices.size(); ++i) {
-        std::vector<Fragment> rasterizedTriangle = triangle(
-                assembledVertices[i][0],
-                assembledVertices[i][1],
-                assembledVertices[i][2]
-        );
-        fragments.insert(fragments.end(), rasterizedTriangle.begin(), rasterizedTriangle.end());
-    }
+        // 3. Rasterization
+        std::vector<Fragment> fragments;
+        for (size_t i = 0; i < assembledVertices.size(); ++i) {
+            std::vector<Fragment> rasterizedTriangle = triangle(
+                    assembledVertices[i][0],
+                    assembledVertices[i][1],
+                    assembledVertices[i][2]
+            );
+            fragments.insert(fragments.end(), rasterizedTriangle.begin(), rasterizedTriangle.end());
+        }
 
-    // 4. Fragment Shader
-    for (size_t i = 0; i < fragments.size(); ++i) {
-        const Fragment& fragment = tierra(fragments[i]);
-        // Apply the fragment shader to compute the final color
-        point(fragment); // Be aware of potential race conditions here
+        // 4. Fragment Shader
+        for (size_t i = 0; i < fragments.size(); ++i) {
+            Fragment& fragment = fragments[i];
+            shaderType currentShader = model.currentShader;
+
+            switch (currentShader) {
+                case SOL:
+                    fragment = sol(fragment);
+                    break;
+                case TIERRA:
+                    fragment = tierra(fragment);
+                    break;
+                    // Añade más casos para otros shaders
+            }
+            point(fragment); // Be aware of potential race conditions here
+        }
     }
 }
 
@@ -123,16 +135,14 @@ int main(int argc, char* argv[]) {
     glm::mat4 view = glm::mat4(1);
     glm::mat4 projection = glm::mat4(1);
 
-    glm::vec3 translationVector(0.0f, 0.0f, 0.0f);
     float a = 45.0f;
     glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);
     glm::vec3 scaleFactor(1.0f, 1.0f, 1.0f);
 
-    glm::mat4 translation = glm::translate(glm::mat4(1.0f), translationVector);
     glm::mat4 scale = glm::scale(glm::mat4(1.0f), scaleFactor);
 
     Camera camera;
-    camera.cameraPosition = glm::vec3(0.0f, 0.0f, 1.5f);
+    camera.cameraPosition = glm::vec3(0.0f, 0.0f, 5.0f);
     camera.targetPosition = glm::vec3(0.0f, 0.0f, 0.0f);
     camera.upVector = glm::vec3(0.0f, 1.0f, 0.0f);
 
@@ -147,14 +157,21 @@ int main(int argc, char* argv[]) {
     std::string title = "FPS: ";
     int speed = 10;
 
-    Model modelSol;
-    modelSol.modelMatrix = glm::mat4(1.0f);
-    modelSol.VBO = vertexBufferObject;
-    modelSol.uniforms = uniforms;
-    modelSol.fshader = sol;
+    Model sol;
+    sol.VBO = vertexBufferObject;
+    sol.currentShader = SOL;
+    sol.uniforms = uniforms;
+    sol.modelMatrix = glm::mat4(1.0f);
 
-    models.push_back(modelSol);
-    //models.push_back(modelTierra);
+    models.push_back(sol);
+
+    Model tierra;
+    tierra.VBO = vertexBufferObject;
+    tierra.currentShader = TIERRA;
+    tierra.uniforms = uniforms;
+    tierra.modelMatrix = glm::mat4(1.0f);
+
+    models.push_back(tierra);
 
     bool running = true;
     while (running) {
@@ -186,7 +203,7 @@ int main(int argc, char* argv[]) {
         a += 1;
         glm::mat4 rotation = glm::rotate(glm::mat4(1.0f), glm::radians(a), rotationAxis);
 
-        uniforms.model = translation * rotation * scale;
+
 
         uniforms.view = glm::lookAt(
                 camera.cameraPosition,
@@ -198,7 +215,22 @@ int main(int argc, char* argv[]) {
         SDL_RenderClear(renderer);
         clearFramebuffer();
 
-        render(vertexBufferObject, uniforms);
+        for (auto& model: models){
+            glm::vec3 newTranslationVector(0.0f, 0.0f, 0.0f);
+            switch (model.currentShader) {
+                case SOL:
+                    newTranslationVector.x = 0.0f;
+                    break;
+                case TIERRA:
+                    newTranslationVector.x = 1.5f;
+                    break;
+            }
+            glm::mat4 translation = glm::translate(glm::mat4(1.0f), newTranslationVector);
+            uniforms.model = translation * rotation * scale;
+            model.uniforms = uniforms;
+        }
+
+        render();
 
         renderBuffer(renderer);
 
