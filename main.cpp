@@ -281,9 +281,10 @@ int main(int argc, char* argv[]) {
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        float ox = 2.0f;
-        float oy = 2.0f;
+        int ox = 2;
+        int oy = 2;
         clearFramebuffer(ox, oy);
+
         glm::mat4 rotation = glm::mat4(1.0f);
         for (auto& model: models){
             switch (model.currentShader) {
