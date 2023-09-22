@@ -16,6 +16,8 @@
 #include "ObjLoader.h"
 #include "noise.h"
 #include "model.h"
+#include <thread>
+
 
 SDL_Window* window = nullptr;
 SDL_Renderer* renderer = nullptr;
@@ -50,39 +52,43 @@ void setColor(const Color& color) {
     currentColor = color;
 }
 
-void render() {
+// Función de renderización paralela para cada hilo
+void renderParallel(int threadID, int numThreads) {
+    for (int i = threadID; i < models.size(); i += numThreads) {
+        // Obtener el modelo que este hilo debe procesar
+        Model& model = models[i];
 
-    for (auto& model: models){
+        // Resto del código de renderización aquí...
         // 1. Vertex Shader
         std::vector<Vertex> transformedVertices(model.VBO.size() / 3);
-        for (size_t i = 0; i < model.VBO.size() / 3; ++i) {
-            Vertex vertex = { model.VBO[i * 3], model.VBO[i * 3 + 1], model.VBO[i * 3 + 2] };
-            transformedVertices[i] = vertexShader(vertex, model.uniforms);
+        for (size_t j = 0; j < model.VBO.size() / 3; ++j) {
+            Vertex vertex = { model.VBO[j * 3], model.VBO[j * 3 + 1], model.VBO[j * 3 + 2] };
+            transformedVertices[j] = vertexShader(vertex, model.uniforms);
         }
 
         // 2. Primitive Assembly
         std::vector<std::vector<Vertex>> assembledVertices(transformedVertices.size() / 3);
-        for (size_t i = 0; i < transformedVertices.size() / 3; ++i) {
-            Vertex edge1 = transformedVertices[3 * i];
-            Vertex edge2 = transformedVertices[3 * i + 1];
-            Vertex edge3 = transformedVertices[3 * i + 2];
-            assembledVertices[i] = { edge1, edge2, edge3 };
+        for (size_t j = 0; j < transformedVertices.size() / 3; ++j) {
+            Vertex edge1 = transformedVertices[3 * j];
+            Vertex edge2 = transformedVertices[3 * j + 1];
+            Vertex edge3 = transformedVertices[3 * j + 2];
+            assembledVertices[j] = { edge1, edge2, edge3 };
         }
 
         // 3. Rasterization
         std::vector<Fragment> fragments;
-        for (size_t i = 0; i < assembledVertices.size(); ++i) {
+        for (size_t j = 0; j < assembledVertices.size(); ++j) {
             std::vector<Fragment> rasterizedTriangle = triangle(
-                    assembledVertices[i][0],
-                    assembledVertices[i][1],
-                    assembledVertices[i][2]
+                    assembledVertices[j][0],
+                    assembledVertices[j][1],
+                    assembledVertices[j][2]
             );
             fragments.insert(fragments.end(), rasterizedTriangle.begin(), rasterizedTriangle.end());
         }
 
         // 4. Fragment Shader
-        for (size_t i = 0; i < fragments.size(); ++i) {
-            Fragment& fragment = fragments[i];
+        for (size_t j = 0; j < fragments.size(); ++j) {
+            Fragment& fragment = fragments[j];
             shaderType currentShader = model.currentShader;
 
             switch (currentShader) {
@@ -104,6 +110,24 @@ void render() {
         }
     }
 }
+
+// Función principal de renderización
+void render() {
+    // Especifica el número de hilos que deseas utilizar (por ejemplo, 4 hilos)
+    int numThreads = 8;
+    std::vector<std::thread> threads;
+
+    // Iniciar los hilos
+    for (int i = 0; i < numThreads; ++i) {
+        threads.emplace_back(renderParallel, i, numThreads);
+    }
+
+    // Esperar a que todos los hilos terminen
+    for (auto& thread : threads) {
+        thread.join();
+    }
+}
+
 
 glm::mat4 createViewportMatrix(size_t screenWidth, size_t screenHeight) {
     glm::mat4 viewport = glm::mat4(1.0f);
