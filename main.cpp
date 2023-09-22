@@ -161,7 +161,6 @@ int main(int argc, char* argv[]) {
     sol.VBO = vertexBufferObject;
     sol.currentShader = SOL;
     sol.uniforms = uniforms;
-    sol.modelMatrix = glm::mat4(1.0f);
 
     models.push_back(sol);
 
@@ -169,7 +168,6 @@ int main(int argc, char* argv[]) {
     tierra.VBO = vertexBufferObject;
     tierra.currentShader = TIERRA;
     tierra.uniforms = uniforms;
-    tierra.modelMatrix = glm::mat4(1.0f);
 
     models.push_back(tierra);
 
@@ -177,7 +175,6 @@ int main(int argc, char* argv[]) {
     luna.VBO = vertexBufferObject;
     luna.currentShader = LUNA;
     luna.uniforms = uniforms;
-    luna.modelMatrix = glm::mat4(1.0f);
 
     models.push_back(luna);
 
@@ -185,7 +182,6 @@ int main(int argc, char* argv[]) {
     gaseoso.VBO = vertexBufferObject;
     gaseoso.currentShader = GASEOSO;
     gaseoso.uniforms = uniforms;
-    gaseoso.modelMatrix = glm::mat4(1.0f);
 
     models.push_back(gaseoso);
 
