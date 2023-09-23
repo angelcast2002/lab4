@@ -18,4 +18,4 @@ Para moverse dentro del proyecto se pueden usar las siguientes teclas.
    3. LeftKey --> Mueve la camara hacia la izquierda.
    4. RightKey --> Mueve la camara hacia la derecha.
 
-![](https://github.com/angelcast2002/lab4/blob/master/lab4Video.gif)
+![](https://github.com/angelcast2002/lab4/blob/SpaceTravel/proyecto1GxC.mp4)
