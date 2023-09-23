@@ -116,7 +116,7 @@ Fragment tierra(Fragment& fragment) {
     glm::vec3 oceanColor = glm::vec3(0.12f, 0.38f, 0.57f);
     glm::vec3 cloudColor = glm::vec3(1.0f, 1.0f, 1.0f);
 
-    glm::vec2 uv = glm::vec2(fragment.originalPos.x, fragment.originalPos.y);
+    glm::vec3 uv = glm::vec3(fragment.originalPos.x, fragment.originalPos.y, fragment.originalPos.z);
 
     FastNoiseLite noiseGenerator;
     noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_OpenSimplex2);
@@ -126,15 +126,17 @@ Fragment tierra(Fragment& fragment) {
 
     float ox = 1200.0f;
     float oy = 3000.0f;
+    float oz = 3000.0f;
     float zoom = 400.0f;
 
-    float noiseValue = noiseGenerator.GetNoise((uv.x + ox) * zoom, (uv.y + oy) * zoom);
+    float noiseValue = noiseGenerator.GetNoise((uv.x + ox) * zoom, (uv.y + oy) * zoom, (uv.z + oz) * zoom);
 
     float oxg = 5500.0f;
     float oyg = 6900.0f;
+    float ozg = 3000.0f;
     float zoomg = 900.0f;
 
-    float noiseValueG = noiseGenerator2.GetNoise((uv.x + oxg) * zoomg, (uv.y + oyg) * zoomg);
+    float noiseValueG = noiseGenerator2.GetNoise((uv.x + oxg) * zoomg, (uv.y + oyg) * zoomg, (uv.z + ozg) * zoom);
 
     glm::vec3 tmpColor;
     if (noiseValue < 0.5f) {
@@ -149,9 +151,10 @@ Fragment tierra(Fragment& fragment) {
 
     float oxc = 5500.0f;
     float oyc = 6900.0f;
+    float oyz = 3000.0f;
     float zoomc = 300.0f;
 
-    float noiseValueC = noiseGenerator.GetNoise((uv.x + oxc) * zoomc, (uv.y + oyc) * zoomc);
+    float noiseValueC = noiseGenerator.GetNoise((uv.x + oxc) * zoomc, (uv.y + oyc) * zoomc, (uv.z + oyz) * zoom);
 
     if (noiseValueC > 0.5f) {
         float t = (noiseValueC - 0.5f) * 2.0f; // Map [-1, 1] to [0, 1]
@@ -159,6 +162,10 @@ Fragment tierra(Fragment& fragment) {
     }
 
     color = Color(tmpColor.x, tmpColor.y, tmpColor.z);
+
+    if (fragment.intensity < 0.5f){
+        fragment.intensity = glm::mix(fragment.intensity, 0.5f, 0.2f);
+    }
 
     fragment.color = color * fragment.intensity;
 
@@ -196,6 +203,10 @@ Fragment gaseoso(Fragment& fragment) {
 
     color = Color(secondColor.x, secondColor.y, secondColor.z);
 
+    if (fragment.intensity < 0.5f){
+        fragment.intensity = glm::mix(fragment.intensity, 0.5f, 0.2f);
+    }
+
     fragment.color = color * fragment.intensity;
 
     return fragment;
@@ -206,7 +217,9 @@ Fragment luna(Fragment& fragment) {
 
     glm::vec3 moonColor = glm::vec3(0.8f, 0.8f, 0.8f); // Color de la luna
 
-    glm::vec2 uv = glm::vec2(fragment.originalPos.x * 2.0 - 1.0, fragment.originalPos.y * 2.0 - 1.0);
+    glm::vec3 uv = glm::vec3(fragment.originalPos.x * 2.0 - 1.0,
+                             fragment.originalPos.y * 2.0 - 1.0,
+                             fragment.originalPos.z);
 
     // Frecuencia y amplitud de las texturas para simular la superficie rugosa
     float amplitude = 0.1; // Ajusta la amplitud de las texturas
@@ -219,7 +232,7 @@ Fragment luna(Fragment& fragment) {
     float scale = 500.0f;
 
     // Genera el valor de ruido para la superficie rugosa
-    float noiseValue = noiseGenerator.GetNoise((uv.x + offsetX) * scale, (uv.y + offsetY) * scale);
+    float noiseValue = noiseGenerator.GetNoise((uv.x + offsetX) * scale, (uv.y + offsetY) * scale, uv.z);
     noiseValue = (noiseValue + 1.0f) * 0.5f; // Mapea [-1, 1] a [0, 1]
 
     // Combina el color de la luna con las texturas rugosas
@@ -227,7 +240,89 @@ Fragment luna(Fragment& fragment) {
 
     color = Color(moonColor.x, moonColor.y, moonColor.z);
 
+    if (fragment.intensity < 0.5f){
+        fragment.intensity = glm::mix(fragment.intensity, 0.5f, 0.2f);
+    }
+
     fragment.color = color * fragment.intensity;
 
     return fragment;
 }
+
+Fragment anillos(Fragment& fragment) {
+    Color color;
+    glm::vec3 mainColor = glm::vec3 (0.0f, 188.0f/ 255.0f, 159.0f/255.0f);
+    glm::vec3 secondColor = glm::vec3(51.0f, 108.0f/ 255.0f, 99.0f/255.0f);
+    FastNoiseLite noiseGenerator;
+    noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+
+    glm::vec3 uv = glm::vec3(fragment.originalPos.x * 2.0 - 1.0,
+                             fragment.originalPos.y * 2.0 - 1.0,
+                             fragment.originalPos.z);
+
+    // Frecuencia y amplitud de las texturas para simular la superficie rugosa
+    float amplitude = 0.1; // Ajusta la amplitud de las texturas
+
+    float offsetX = 5000.0f;
+    float offsetY = 8000.0f;
+    float offsetZ = 300.0f;
+    float scale = 500.0f;
+
+    float noiseValue = noiseGenerator.GetNoise((uv.x + offsetX) * scale, (uv.y + offsetY) * scale, (uv.z + offsetZ) * scale);
+    noiseValue = (noiseValue + 1.0f) * 0.5f; // Mapea [-1, 1] a [0, 1]
+
+    mainColor = glm::mix(mainColor, secondColor, noiseValue * amplitude * 5.0f);
+
+
+    color = Color(mainColor.x, mainColor.y, mainColor.z);
+
+    if (fragment.intensity < 0.5f){
+        fragment.intensity = glm::mix(fragment.intensity, 0.5f, 0.2f);
+    }
+
+    fragment.color = color * fragment.intensity;
+
+    return fragment;
+}
+
+Fragment platenaAnillos(Fragment& fragment) {
+    Color color;
+
+    glm::vec3 mainColor = glm::vec3 (0.0f, 188.0f/ 255.0f, 159.0f/255.0f);
+    glm::vec3 secondColor = glm::vec3(51.0f, 108.0f/ 255.0f, 99.0f/255.0f);
+
+    glm::vec2 uv = glm::vec2(fragment.originalPos.x * 2.0 - 1.0 , fragment.originalPos.y * 2.0 - 1.0);
+
+    // Frecuencia y amplitud de las ondas en el planeta
+    float frequency = 15.0; // Ajusta la frecuencia de las líneas
+    float amplitude = 0.1; // Ajusta la amplitud de las líneas
+
+    FastNoiseLite noiseGenerator;
+    noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Cellular);
+
+    float offsetX = 10000.0f;
+    float offsetY = 10000.0f;
+    float scale = 900.0f;
+
+    // Genera el valor de ruido
+    float noiseValue = noiseGenerator.GetNoise((uv.x + offsetX) * scale, (uv.y + offsetY) * scale);
+    noiseValue = (noiseValue + 1.0f) * 0.5f; // Map [-1, 1] to [0, 1]
+
+    // Calcula el valor sinusoide para crear líneas
+    float sinValue = glm::sin(uv.y * frequency) * amplitude;
+
+    // Combina el color base con las líneas sinusoide
+    secondColor = mainColor + glm::vec3 (sinValue);
+
+    color = Color(secondColor.x, secondColor.y, secondColor.z);
+
+    if (fragment.intensity < 0.5f){
+        fragment.intensity = glm::mix(fragment.intensity, 0.5f, 0.2f);
+    }
+
+    fragment.color = color * fragment.intensity;
+
+    return fragment;
+}
+
+

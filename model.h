@@ -7,6 +7,10 @@ enum shaderType {
     TIERRA,
     GASEOSO,
     LUNA,
+    NAVE,
+    ORBIT,
+    ANILLOS,
+    PLANETAANILLOS,
 };
 
 class Model {

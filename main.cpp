@@ -104,7 +104,12 @@ void renderParallel(int threadID, int numThreads) {
                 case LUNA:
                     fragment = luna(fragment);
                     break;
-                    // Añade más casos para otros shaders
+                case ANILLOS:
+                    fragment = anillos(fragment);
+                    break;
+                case PLANETAANILLOS:
+                    fragment = platenaAnillos(fragment);
+                    break;
             }
             point(fragment); // Be aware of potential race conditions here
         }
@@ -157,6 +162,26 @@ int main(int argc, char* argv[]) {
             vertexBufferObject.push_back(vertexPosition);
             vertexBufferObject.push_back(vertexNormal);
             vertexBufferObject.push_back(vertexTexture);
+        }
+    }
+
+    std::vector<glm::vec3> verticesAnillos;
+    std::vector<glm::vec3> normalsAnillos;
+    std::vector<glm::vec3> texCoordsAnillos;
+    std::vector<Face> facesAnillos;
+    std::vector<glm::vec3> vertexBufferObjectAnillos;
+
+    loadOBJ("C:\\Users\\caste\\OneDrive\\Documentos\\Universidad\\semestre6\\graficosxcomputador\\lab4\\anillos.obj",
+            verticesAnillos, normalsAnillos, texCoordsAnillos, facesAnillos);
+
+    for (const auto& face : faces) {
+        for (int i = 0; i < 3; ++i) {
+            glm::vec3 vertexPosition = verticesAnillos[face.vertexIndices[i]];
+            glm::vec3 vertexNormal = normalsAnillos[face.normalIndices[i]];
+            glm::vec3 vertexTexture = texCoords[face.texIndices[i]];
+            vertexBufferObjectAnillos.push_back(vertexPosition);
+            vertexBufferObjectAnillos.push_back(vertexNormal);
+            vertexBufferObjectAnillos.push_back(vertexTexture);
         }
     }
 
@@ -215,6 +240,23 @@ int main(int argc, char* argv[]) {
 
     models.push_back(gaseoso);
 
+    Model anillos;
+    anillos.VBO = vertexBufferObjectAnillos;
+    anillos.currentShader = ANILLOS;
+    anillos.uniforms = uniforms;
+    anillos.radius = 10.0f;
+    anillos.speedRotation = 0.03f;
+
+    models.push_back(anillos);
+
+    Model planetaAnillos;
+    planetaAnillos.VBO = vertexBufferObject;
+    planetaAnillos.currentShader = PLANETAANILLOS;
+    planetaAnillos.radius = 10.0f;
+    planetaAnillos.speedRotation = 0.03f;
+
+    models.push_back(planetaAnillos);
+
     // Posicion de los astros
     glm::vec3 newTranslationVector(0.0f, 0.0f, 0.0f);
 
@@ -223,13 +265,14 @@ int main(int argc, char* argv[]) {
     float rotaTierra = 45.0f;
     float rotaLuna = 45.0f;
     float rotaGaseoso = 45.0f;
+    float rotaPlanetaAnillos = 45.0f;
     glm::vec3 rotationAxis(0.0f, 1.0f, 0.0f);
 
     // Tamaño de los astros
     glm::vec3 scaleFactor(1.0f, 1.0f, 1.0f);
 
     // Movimiento de la camara
-    glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 10.0f); // Posición inicial de la cámara
+    glm::vec3 cameraPosition = glm::vec3(0.0f, 0.0f, 25.0f); // Posición inicial de la cámara
     glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);    // Dirección hacia la que mira la cámara
     glm::vec3 cameraUp = glm::vec3(0.0f, 1.0f, 0.0f);        // Vector "arriba" de la cámara
     float yaw = -90.0f;  // Ángulo de rotación en el plano horizontal (eje Y)
@@ -323,6 +366,21 @@ int main(int argc, char* argv[]) {
                     newTranslationVector = glm::vec3(model.radius * glm::cos(model.degreesRotation),
                                                      0.0f, model.radius * glm::sin(model.degreesRotation));
                     scaleFactor = glm::vec3(1.75f, 1.75f, 1.75f);
+                    rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaGaseoso), rotationAxis);
+                    break;
+                case ANILLOS:
+                    model.degreesRotation += model.speedRotation;
+                    newTranslationVector = glm::vec3(model.radius * glm::cos(model.degreesRotation),
+                                                     0.0f, model.radius * glm::sin(model.degreesRotation));
+                    scaleFactor = glm::vec3(5.0f);
+                    rotation = glm::mat4(0.0001f);
+                    break;
+                case PLANETAANILLOS:
+                    rotaPlanetaAnillos += 5.0f;
+                    model.degreesRotation += model.speedRotation;
+                    newTranslationVector = glm::vec3(model.radius * glm::cos(model.degreesRotation),
+                                                     0.0f, model.radius * glm::sin(model.degreesRotation));
+                    scaleFactor = glm::vec3(3.0f);
                     rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaGaseoso), rotationAxis);
                     break;
             }
