@@ -18,24 +18,21 @@ FragColor blank{
 
 FragColor star{
   Color{255, 255, 255},
-  std::numeric_limits<double>::min()
+  std::numeric_limits<double>::max()
 };
 
 std::array<FragColor, SCREEN_WIDTH * SCREEN_HEIGHT> framebuffer;
 
-// Create a 2D array of mutexes
-std::array<std::mutex, SCREEN_WIDTH * SCREEN_HEIGHT> mutexes;
-
 void point(Fragment f) {
-    std::lock_guard<std::mutex> lock(mutexes[f.y * SCREEN_WIDTH + f.x]);
 
     if (f.z < framebuffer[f.y * SCREEN_WIDTH + f.x].z) {
-       framebuffer[f.y * SCREEN_WIDTH + f.x] = FragColor{f.color, f.z};
+        framebuffer[f.y * SCREEN_WIDTH + f.x] = FragColor{f.color, f.z};
     }
 }
 
 void clearFramebuffer(int ox, int oy) {
-    /* std::fill(framebuffer.begin(), framebuffer.end(), blank); */
+    /*std::fill(framebuffer.begin(), framebuffer.end(), star); */
+    // return;
     for (int y = 0; y < SCREEN_HEIGHT; y++) {
         for (int x = 0; x < SCREEN_WIDTH; x++) {
             FastNoiseLite noiseGenerator;

@@ -192,6 +192,8 @@ int main(int argc, char* argv[]) {
     tierra.VBO = vertexBufferObject;
     tierra.currentShader = TIERRA;
     tierra.uniforms = uniforms;
+    tierra.radius = 1.5f;
+    tierra.speedRotation = 0.02f;
 
     models.push_back(tierra);
 
@@ -199,6 +201,8 @@ int main(int argc, char* argv[]) {
     luna.VBO = vertexBufferObject;
     luna.currentShader = LUNA;
     luna.uniforms = uniforms;
+    luna.radius = 2.0f;
+    luna.speedRotation = 0.02f;
 
     models.push_back(luna);
 
@@ -206,6 +210,8 @@ int main(int argc, char* argv[]) {
     gaseoso.VBO = vertexBufferObject;
     gaseoso.currentShader = GASEOSO;
     gaseoso.uniforms = uniforms;
+    gaseoso.radius = 4.0f;
+    gaseoso.speedRotation = 0.01f;
 
     models.push_back(gaseoso);
 
@@ -234,7 +240,6 @@ int main(int argc, char* argv[]) {
 
     // Rotacion automatica
     bool isAutoRotation = true; // Inicialmente, la rotación no es automática
-
 
     bool running = true;
     while (running) {
@@ -267,13 +272,6 @@ int main(int argc, char* argv[]) {
                         isAutoRotation = false;
                         yaw += rotationSpeed;
                         break;
-                    case SDLK_l: // Cambiar entre rotación automática y manual
-                        if (isAutoRotation) {
-                            isAutoRotation = false; // Cambiar a rotación manual
-                        } else {
-                            isAutoRotation = true; // Cambiar a rotación automática
-                        }
-                        break;
                     case SDLK_w: // Rotar hacia arriba
                         pitch += pitchSpeed;
                         break;
@@ -284,26 +282,15 @@ int main(int argc, char* argv[]) {
             }
         }
 
-        if (isAutoRotation) {
-            rotationSpeed = 0.2f; // Establecer la velocidad de rotación automática
-            yaw += rotationSpeed; // Rotación automática
-        } else {
-            rotationSpeed = 1.0f; // Establecer la velocidad de rotación manual
-        }
+        int ox = 2;
+        int oy = 2;
+        clearFramebuffer(ox, oy);
 
         glm::mat4 view = glm::lookAt(cameraPosition, cameraPosition + cameraFront, cameraUp);
         view = glm::rotate(view, glm::radians(pitch), glm::vec3(1.0f, 0.0f, 0.0f)); // Rotación vertical
         view = glm::rotate(view, glm::radians(yaw), glm::vec3(0.0f, 1.0f, 0.0f)); // Rotación horizontal
         uniforms.view = view;
 
-
-
-        SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-        SDL_RenderClear(renderer);
-
-        int ox = 2;
-        int oy = 2;
-        clearFramebuffer(ox, oy);
 
         glm::mat4 rotation = glm::mat4(1.0f);
         for (auto& model: models){
@@ -316,19 +303,25 @@ int main(int argc, char* argv[]) {
                     break;
                 case TIERRA:
                     rotaTierra += 0.8f;
-                    newTranslationVector = glm::vec3(1.5f, 0.0f, 0.0f);
+                    model.degreesRotation += model.speedRotation;
+                    newTranslationVector = glm::vec3(model.radius * glm::cos(model.degreesRotation),
+                                                     0.0f, model.radius * glm::sin(model.degreesRotation));
                     scaleFactor = glm::vec3(0.5f, 0.5f, 0.5f);
                     rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaTierra), rotationAxis);
                     break;
                 case LUNA:
                     rotaLuna += 1.5f;
-                    newTranslationVector = glm::vec3(2.0f, 0.3f, 0.0f);
+                    model.degreesRotation += model.speedRotation;
+                    newTranslationVector = glm::vec3(model.radius * glm::cos(model.degreesRotation),
+                                                     0.3f, model.radius * glm::sin(model.degreesRotation));
                     scaleFactor = glm::vec3(0.25f, 0.25f, 0.25f);
                     rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaLuna), rotationAxis);
                     break;
                 case GASEOSO:
                     rotaGaseoso += 3.0f;
-                    newTranslationVector = glm::vec3(4.0f, 0.0f, 0.0f);
+                    model.degreesRotation += model.speedRotation;
+                    newTranslationVector = glm::vec3(model.radius * glm::cos(model.degreesRotation),
+                                                     0.0f, model.radius * glm::sin(model.degreesRotation));
                     scaleFactor = glm::vec3(1.75f, 1.75f, 1.75f);
                     rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaGaseoso), rotationAxis);
                     break;

@@ -14,4 +14,7 @@ class Model {
         std::vector<glm::vec3> VBO;
         Uniforms uniforms;
         shaderType currentShader;
+        float degreesRotation = 45.0f;
+        float radius;
+        float speedRotation;
 };
