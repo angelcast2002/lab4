@@ -60,7 +60,7 @@ std::vector<Fragment> triangle(const Vertex& a, const Vertex& b, const Vertex& c
       float intensity = glm::dot(normal, L);
       
       if (intensity < 0)
-        continue;
+        intensity = 0.0f;
 
       Color color = Color(255, 255, 255);
 
