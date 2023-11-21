@@ -7,6 +7,9 @@ enum shaderType {
     TIERRA,
     GASEOSO,
     LUNA,
+    ANILLOS,
+    PLANETA_ANILLOS,
+    SOL_AMARILLO,
 };
 
 class Model {

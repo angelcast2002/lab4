@@ -231,3 +231,79 @@ Fragment luna(Fragment& fragment) {
 
     return fragment;
 }
+
+Fragment anillos(Fragment& fragment) {
+    Color color;
+    glm::vec3 mainColor = glm::vec3 (0.0f, 188.0f/ 255.0f, 159.0f/255.0f);
+    glm::vec3 secondColor = glm::vec3(51.0f, 108.0f/ 255.0f, 99.0f/255.0f);
+    FastNoiseLite noiseGenerator;
+    noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Perlin);
+
+    glm::vec3 uv = glm::vec3(fragment.originalPos.x * 2.0 - 1.0,
+                             fragment.originalPos.y * 2.0 - 1.0,
+                             fragment.originalPos.z);
+
+    // Frecuencia y amplitud de las texturas para simular la superficie rugosa
+    float amplitude = 0.1; // Ajusta la amplitud de las texturas
+
+    float offsetX = 5000.0f;
+    float offsetY = 8000.0f;
+    float offsetZ = 300.0f;
+    float scale = 500.0f;
+
+    float noiseValue = noiseGenerator.GetNoise((uv.x + offsetX) * scale, (uv.y + offsetY) * scale, (uv.z + offsetZ) * scale);
+    noiseValue = (noiseValue + 1.0f) * 0.5f; // Mapea [-1, 1] a [0, 1]
+
+    mainColor = glm::mix(mainColor, secondColor, noiseValue * amplitude * 5.0f);
+
+
+    color = Color(mainColor.x, mainColor.y, mainColor.z);
+
+    if (fragment.intensity < 0.5f){
+        fragment.intensity = glm::mix(fragment.intensity, 0.5f, 0.2f);
+    }
+
+    fragment.color = color * fragment.intensity;
+
+    return fragment;
+}
+
+Fragment platenaAnillos(Fragment& fragment) {
+    Color color;
+
+    glm::vec3 mainColor = glm::vec3 (0.0f, 188.0f/ 255.0f, 159.0f/255.0f);
+    glm::vec3 secondColor = glm::vec3(51.0f, 108.0f/ 255.0f, 99.0f/255.0f);
+
+    glm::vec2 uv = glm::vec2(fragment.originalPos.x * 2.0 - 1.0 , fragment.originalPos.y * 2.0 - 1.0);
+
+    // Frecuencia y amplitud de las ondas en el planeta
+    float frequency = 15.0; // Ajusta la frecuencia de las líneas
+    float amplitude = 0.1; // Ajusta la amplitud de las líneas
+
+    FastNoiseLite noiseGenerator;
+    noiseGenerator.SetNoiseType(FastNoiseLite::NoiseType_Cellular);
+
+    float offsetX = 10000.0f;
+    float offsetY = 10000.0f;
+    float scale = 900.0f;
+
+    // Genera el valor de ruido
+    float noiseValue = noiseGenerator.GetNoise((uv.x + offsetX) * scale, (uv.y + offsetY) * scale);
+    noiseValue = (noiseValue + 1.0f) * 0.5f; // Map [-1, 1] to [0, 1]
+
+    // Calcula el valor sinusoide para crear líneas
+    float sinValue = glm::sin(uv.y * frequency) * amplitude;
+
+    // Combina el color base con las líneas sinusoide
+    secondColor = mainColor + glm::vec3 (sinValue);
+
+    color = Color(secondColor.x, secondColor.y, secondColor.z);
+
+    if (fragment.intensity < 0.5f){
+        fragment.intensity = glm::mix(fragment.intensity, 0.5f, 0.2f);
+    }
+
+    fragment.color = color * fragment.intensity;
+
+    return fragment;
+}

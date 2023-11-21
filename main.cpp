@@ -98,6 +98,15 @@ void render() {
                 case LUNA:
                     fragment = luna(fragment);
                     break;
+                case ANILLOS:
+                    fragment = anillos(fragment);
+                    break;
+                case PLANETA_ANILLOS:
+                    fragment = platenaAnillos(fragment);
+                    break;
+                case SOL_AMARILLO:
+                    fragment = solAmarillo(fragment);
+                    break;
                     // Añade más casos para otros shaders
             }
             point(fragment); // Be aware of potential race conditions here
@@ -123,7 +132,9 @@ int main(int argc, char* argv[]) {
     std::vector<Face> faces;
     std::vector<glm::vec3> vertexBufferObject;
 
-    loadOBJ("C:\\Users\\caste\\OneDrive\\Documentos\\Universidad\\semestre6\\graficosxcomputador\\lab4\\sphere.obj", vertices, normals, texCoords, faces);
+    loadOBJ("C:\\Users\\caste\\OneDrive\\Documentos\\Universidad\\semestre6\\"
+            "graficosxcomputador\\lab4\\sphere.obj",
+            vertices, normals, texCoords, faces);
 
     for (const auto& face : faces) {
         for (int i = 0; i < 3; ++i) {
@@ -133,6 +144,27 @@ int main(int argc, char* argv[]) {
             vertexBufferObject.push_back(vertexPosition);
             vertexBufferObject.push_back(vertexNormal);
             vertexBufferObject.push_back(vertexTexture);
+        }
+    }
+
+    std::vector<glm::vec3> verticesAnillos;
+    std::vector<glm::vec3> normalsAnillos;
+    std::vector<glm::vec3> texCoordsAnillos;
+    std::vector<Face> facesAnillos;
+    std::vector<glm::vec3> vertexBufferObjectAnillos;
+
+    loadOBJ("C:\\Users\\caste\\OneDrive\\Documentos\\"
+            "Universidad\\semestre6\\graficosxcomputador\\lab4\\anillos.obj",
+            verticesAnillos, normalsAnillos, texCoordsAnillos, facesAnillos);
+
+    for (const auto& face : facesAnillos) {
+        for (int i = 0; i < 3; ++i) {
+            glm::vec3 vertexPosition = verticesAnillos[face.vertexIndices[i]];
+            glm::vec3 vertexNormal = normalsAnillos[face.normalIndices[i]];
+            glm::vec3 vertexTexture = texCoordsAnillos[face.texIndices[i]];
+            vertexBufferObjectAnillos.push_back(vertexPosition);
+            vertexBufferObjectAnillos.push_back(vertexNormal);
+            vertexBufferObjectAnillos.push_back(vertexTexture);
         }
     }
 
@@ -171,7 +203,7 @@ int main(int argc, char* argv[]) {
     tierra.uniforms = uniforms;
     tierra.modelMatrix = glm::mat4(1.0f);
 
-    models.push_back(tierra);
+    // models.push_back(tierra);
 
     Model luna;
     luna.VBO = vertexBufferObject;
@@ -179,7 +211,33 @@ int main(int argc, char* argv[]) {
     luna.uniforms = uniforms;
     luna.modelMatrix = glm::mat4(1.0f);
 
-    models.push_back(luna);
+    // models.push_back(luna);
+
+    Model solAmarillo;
+    solAmarillo.VBO = vertexBufferObject;
+    solAmarillo.currentShader = SOL_AMARILLO;
+    solAmarillo.uniforms = uniforms;
+    solAmarillo.modelMatrix = glm::mat4(1.0f);
+
+    //models.push_back(solAmarillo);
+
+    Model planetaAnillos;
+    planetaAnillos.VBO = vertexBufferObject;
+    planetaAnillos.currentShader = PLANETA_ANILLOS;
+    planetaAnillos.uniforms = uniforms;
+    planetaAnillos.modelMatrix = glm::mat4(1.0f);
+
+    models.push_back(planetaAnillos);
+
+    Model anillos;
+    anillos.VBO = vertexBufferObjectAnillos;
+    anillos.currentShader = ANILLOS;
+    anillos.uniforms = uniforms;
+    anillos.modelMatrix = glm::mat4(1.0f);
+
+    models.push_back(anillos);
+
+
 
     // Posicion de los astros
     glm::vec3 newTranslationVector(0.0f, 0.0f, 0.0f);
@@ -250,6 +308,24 @@ int main(int argc, char* argv[]) {
                     newTranslationVector = glm::vec3(0.5f, 0.3f, 0.0f);
                     // newTranslationVector = glm::vec3(2.0f, 0.3f, 0.0f);
                     scaleFactor = glm::vec3(0.25f, 0.25f, 0.25f);
+                    rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaLuna), rotationAxis);
+                    break;
+                case SOL_AMARILLO:
+                    rotaSol += 0.3f;
+                    newTranslationVector = glm::vec3(0.0f, 0.0f, 0.0f);
+                    scaleFactor = glm::vec3(1.0f, 1.0f, 1.0f);
+                    rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaSol), rotationAxis);
+                    break;
+                case PLANETA_ANILLOS:
+                    rotaTierra += 0.8f;
+                    newTranslationVector = glm::vec3(0.0f, 0.0f, 0.0f);
+                    scaleFactor = glm::vec3(0.5f, 0.5f, 0.5f);
+                    rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaTierra), rotationAxis);
+                    break;
+                case ANILLOS:
+                    rotaLuna += 1.5f;
+                    newTranslationVector = glm::vec3(0.0f, 0.0f, 0.0f);
+                    scaleFactor = glm::vec3(0.75f, 0.75f, 0.75f);
                     rotation = glm::rotate(glm::mat4(1.0f), glm::radians(rotaLuna), rotationAxis);
                     break;
             }
